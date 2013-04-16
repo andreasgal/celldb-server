@@ -18,7 +18,8 @@ db.serialize(function () {
   x('pragma temp_store=MEMORY;');
   x('drop table if exists towers;');
   x('create table towers (mcc integer, mnc integer, lac integer, cid integer, lat double, lon double, range double, measurements integer);');
-  x('begin transaction;');
+  x('create index mcc_mnc_lac_cid on towers(mcc,mnc,lac,cid);');
+  x('create index mcc_mnc_lac on towers(mcc,mnc,lac);');
   new lazy(fs.createReadStream('basestations.csv')).lines.forEach(function (line) {
     var fields = line.toString().split(";");
     var lat = fields[2] - 0;
@@ -34,10 +35,6 @@ db.serialize(function () {
     var range = 0.5; // 500ft default distance
     var measurements = 1;
     x('insert into towers values (' + [mcc, mnc, lac, cid, lat, lon, range, measurements].join(',') + ');');
-  }).tail(function () {
-    x('commit transaction;');
-    x('create unqiue index mcc_mnc_lac_cid on towers(mcc,mnc,lac,cid);');
-    x('create index mcc_mnc_lac on towers(mcc,mnc,lac);');
   });
 });
 
